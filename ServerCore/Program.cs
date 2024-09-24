@@ -23,10 +23,13 @@ namespace ServerCore
 
             for (int i = 0; i < 5; i++)
             {
-                ThreadPool.QueueUserWorkItem(MainThread);
+                // LongRunning을 사용해 스레드 풀의 스레드를 사용하는 것이 아닌
+                // 별도의 스레드로 동작시킴.
+                Task t = new Task(() => { while (true) { } }, TaskCreationOptions.LongRunning);
+                t.Start();
             }
 
-            // 모든 스레드가 사용중이기 때문에 다음의 코드는 동작할 수 없음.
+            // 코드 실행됨.
             ThreadPool.QueueUserWorkItem(MainThread);
 
             while (true){ }
