@@ -8,35 +8,49 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
+    // Atomic - 원자성
+    //  : ex) 골드를 소모해 물건을 구매하는 경우
+    // 골드 소모
+    //  --- 서버 다운 ---
+    // 물건 구매 -> 실행되지 않음.
+
     class Program
     {
-        int _answer;
-        bool _complete;
-
-        void A()
+        static volatile int number = 0;
+        static void Thread_1()
         {
-            _answer = 123;      // Store
-            // Store 후 베리어
-            Thread.MemoryBarrier(); // B 1
-            _complete = true;   // Store
-            // 가시성 보장
-            // Store 후 베리어
-            Thread.MemoryBarrier(); // B 2
-        }
-        void B()
-        {
-            // Load 전 베리어
-            Thread.MemoryBarrier(); // B 3
-            if (_complete)  // Load
-            {
-                Thread.MemoryBarrier(); // B 4
-                Console.WriteLine(_answer);
-            }
+            for (int i = 0; i < 10000; i++)
+                number++;
+            // **********************************
+            // number++; 어셈블리 과정
+            // int temp = number;
+            // temp += 1;
+            // number = temp;
+            // **********************************
         }
 
-
+        static void Thread_2()
+        {
+            for (int i = 0; i < 10000; i++)
+                number--;
+            // **********************************
+            // number--; 어셈블리 과정
+            // int temp = number;
+            // temp -= 1;
+            // number = temp;
+            // **********************************
+        }
         static void Main(string[] args)
         {
+            Task t1 = new Task(Thread_1);
+            Task t2 = new Task(Thread_2);
+
+            t1.Start();
+            t2.Start();
+
+            Task.WaitAll(t1, t2);
+
+            Console.WriteLine(number);
         }
     }
 }
