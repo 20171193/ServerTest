@@ -22,12 +22,32 @@ namespace ServerCore
                 //   다른 스레드에서 접근이 불가하게 함.
                 // : 해당 영역에서는 사실상 싱글 스레드처럼 사용
                 // C++ : std::mutex
+
                 Monitor.Enter(_obj);
-                { 
+                {
                     number++;
                     return;     // 잠금이 풀리기 전 return
                 }
                 Monitor.Exit(_obj); // *DeadLock 데드락
+
+                // 1. try finally를 사용한 데드락 방지
+                // try
+                // {
+                //     Monitor.Enter(_obj);
+                //     number++;
+                //     return;
+                // }
+                // finally
+                // {
+                //     Monitor.Exit(_obj);
+                // }
+
+                // 2. lock을 사용한 데드락 방지
+                // lock (_obj)
+                // {
+                //     number++;
+                // }
+
             }
         }
 
