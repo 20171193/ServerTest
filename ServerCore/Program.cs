@@ -27,7 +27,7 @@ namespace ServerCore
                     number++;
                     return;     // 잠금이 풀리기 전 return
                 }
-                Monitor.Exit(_obj);
+                Monitor.Exit(_obj); // *DeadLock 데드락
             }
         }
 
