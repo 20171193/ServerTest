@@ -8,30 +8,39 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
-    // Atomic - 원자성
-    //  : ex) 골드를 소모해 물건을 구매하는 경우
-    // 골드 소모
-    //  --- 서버 다운 ---
-    // 물건 구매 -> 실행되지 않음.
-
     class Program
     {
-        static volatile int number = 0;
+        static int number = 0;
+        static object _obj = new object();
+
         static void Thread_1()
         {
-            // 원자적 덧셈 : All or Nothing
             for (int i = 0; i < 10000; i++)
             {
-                // 변경된 값을 받고싶은 경우 
-                int afterValue = Interlocked.Increment(ref number);
+                // 상호배제 Mutual Exclusive
+                // : 정해진 영역 내부에서 사용하는 변수를
+                //   다른 스레드에서 접근이 불가하게 함.
+                // : 해당 영역에서는 사실상 싱글 스레드처럼 사용
+                // C++ : std::mutex
+                Monitor.Enter(_obj);
+                { 
+                    number++;
+                    return;     // 잠금이 풀리기 전 return
+                }
+                Monitor.Exit(_obj);
             }
         }
 
         static void Thread_2()
         {
-            // 원자적 뺄셈 : All or Nothing
             for (int i = 0; i < 10000; i++)
-                Interlocked.Decrement(ref number);
+            {
+                Monitor.Enter(_obj);
+
+                number--;
+
+                Monitor.Exit(_obj);
+            }
         }
         static void Main(string[] args)
         {
