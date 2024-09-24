@@ -19,26 +19,16 @@ namespace ServerCore
         static volatile int number = 0;
         static void Thread_1()
         {
+            // 원자적 덧셈
             for (int i = 0; i < 10000; i++)
-                number++;
-            // **********************************
-            // number++; 어셈블리 과정
-            // int temp = number;
-            // temp += 1;
-            // number = temp;
-            // **********************************
+                Interlocked.Increment(ref number);
         }
 
         static void Thread_2()
         {
+            // 원자적 뺄셈
             for (int i = 0; i < 10000; i++)
-                number--;
-            // **********************************
-            // number--; 어셈블리 과정
-            // int temp = number;
-            // temp -= 1;
-            // number = temp;
-            // **********************************
+                Interlocked.Decrement(ref number);
         }
         static void Main(string[] args)
         {
