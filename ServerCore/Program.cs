@@ -8,71 +8,63 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
+    class SpinLock
+    {
+        volatile int _locked = 0;
+
+        public void Acquire()
+        {
+            while(true)
+            {
+                int expected = 0;
+                int desired = 1;
+
+                // _locked 값이 expected 값이라면
+                // desired에 할당
+                if (Interlocked.CompareExchange(ref _locked, desired, expected) == expected)
+                    break;
+            }
+        }
+        public void Release()
+        {
+            _locked = 0;
+        }
+    }
+
     class Program
     {
-        static int number = 0;
-        static object _obj = new object();
+        static int _num = 0;
+        static SpinLock _lock = new SpinLock();
 
         static void Thread_1()
         {
-            for (int i = 0; i < 10000; i++)
+            for(int i =0; i<100000; i++)
             {
-                // 상호배제 Mutual Exclusive
-                // : 정해진 영역 내부에서 사용하는 변수를
-                //   다른 스레드에서 접근이 불가하게 함.
-                // : 해당 영역에서는 사실상 싱글 스레드처럼 사용
-                // C++ : std::mutex
-
-                Monitor.Enter(_obj);
-                {
-                    number++;
-                    return;     // 잠금이 풀리기 전 return
-                }
-                Monitor.Exit(_obj); // *DeadLock 데드락
-
-                // 1. try finally를 사용한 데드락 방지
-                // try
-                // {
-                //     Monitor.Enter(_obj);
-                //     number++;
-                //     return;
-                // }
-                // finally
-                // {
-                //     Monitor.Exit(_obj);
-                // }
-
-                // 2. lock을 사용한 데드락 방지
-                // lock (_obj)
-                // {
-                //     number++;
-                // }
-
+                _lock.Acquire();
+                _num++;
+                _lock.Release();
             }
         }
 
         static void Thread_2()
         {
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < 100000; i++)
             {
-                Monitor.Enter(_obj);
-
-                number--;
-
-                Monitor.Exit(_obj);
+                _lock.Acquire();
+                _num--;
+                _lock.Release();
             }
         }
+
         static void Main(string[] args)
         {
             Task t1 = new Task(Thread_1);
             Task t2 = new Task(Thread_2);
-
             t1.Start();
             t2.Start();
 
             Task.WaitAll(t1, t2);
-
-            Console.WriteLine(number);
+            Console.WriteLine(_num);
         }
     }
 }
