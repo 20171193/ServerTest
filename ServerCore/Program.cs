@@ -11,12 +11,15 @@ namespace ServerCore
     class Lock
     {
         // bool <- 커널
-        AutoResetEvent _available = new AutoResetEvent(true);
+        ManualResetEvent _available = new ManualResetEvent(true);
 
         public void Acquire()
         {
+            // 따로 실행한다면 문제가 발생. (멀티 스레드 환경)
+            //_available.WaitOne();   // 입장 시도 
+            //_available.Reset();     //  -> false로 차단 
+
             _available.WaitOne();   // 입장 시도 
-            // _available.Reset(); -> false로 차단 (내포되어 있다고 보면됨.)
         }
         public void Release()
         {
