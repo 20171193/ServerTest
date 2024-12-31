@@ -8,37 +8,26 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
-    class Lock
-    {
-        // bool <- 커널
-        ManualResetEvent _available = new ManualResetEvent(true);
-
-        public void Acquire()
-        {
-            // 따로 실행한다면 문제가 발생. (멀티 스레드 환경)
-            //_available.WaitOne();   // 입장 시도 
-            //_available.Reset();     //  -> false로 차단 
-
-            _available.WaitOne();   // 입장 시도 
-        }
-        public void Release()
-        {
-            _available.Set();   // 입장을 다시 허용
-        }
-    }
-
     class Program
     {
         static int _num = 0;
-        static Lock _lock = new Lock();
+
+        // 뮤텍스 락
+
+        // AutoResetEvent <-> Mutex
+        // : Mutex는 다양한 정보를 담고있음.
+        // : 1. 락이 잠긴 횟수를 int형으로 기록
+        // : 2. 락의 소유자를 기록하여 예기치 못한 상황의 해제 방지
+        //      ex) error : Thread_1(WaitOne), Thread_2(ReleaseMutex) 
+        static Mutex _lock = new Mutex();
 
         static void Thread_1()
         {
             for(int i =0; i<100000; i++)
             {
-                _lock.Acquire();
+                _lock.WaitOne();
                 _num++;
-                _lock.Release();
+                _lock.ReleaseMutex();
             }
         }
 
@@ -46,9 +35,9 @@ namespace ServerCore
         {
             for (int i = 0; i < 100000; i++)
             {
-                _lock.Acquire();
+                _lock.WaitOne();
                 _num--;
-                _lock.Release();
+                _lock.ReleaseMutex();
             }
         }
 
