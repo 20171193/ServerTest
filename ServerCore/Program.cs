@@ -14,6 +14,7 @@ namespace ServerCore
 
         public void Acquire()
         {
+            // 스핀락을 통한 반복적 확인
             while(true)
             {
                 int expected = 0;
@@ -22,7 +23,7 @@ namespace ServerCore
                 // _locked 값이 expected 값이라면
                 // desired에 할당
                 if (Interlocked.CompareExchange(ref _locked, desired, expected) == expected)
-                    break;
+                    break;  // 락 획득 시 break
             }
         }
         public void Release()
