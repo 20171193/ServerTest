@@ -10,27 +10,35 @@ namespace ServerCore
 {
     class Program
     {
-        // Monitor
-        static object _lcok = new object();
-
-        // SpinLock
-        static SpinLock _lock2 = new SpinLock();
-
-        // Mutex
-        static Mutex _lock3 = new Mutex();
+        static volatile int count = 0;
+        static Lock _lock = new Lock();
 
         static void Main(string[] args)
         {
-            bool lockTaken = false;
-            try
+            Task t1 = new Task(delegate ()
             {
-                _lock2.Enter(ref lockTaken);
-            }
-            finally
+                for(int i =0; i<100000; i++)
+                {
+                    _lock.WriteLock();
+                    count++;
+                    _lock.WriteUnLock();
+                }
+            });
+
+            Task t2 = new Task(delegate ()
             {
-                if (lockTaken)
-                    _lock2.Exit();
-            }
+                for(int i =0; i<100000; i++)
+                {
+                    _lock.WriteLock();
+                    count--;
+                    _lock.WriteUnLock();
+                }
+            });
+
+            t1.Start();
+            t2.Start();
+            Task.WaitAll(t1, t2);
+            Console.WriteLine(count);
         }
     }
 }
