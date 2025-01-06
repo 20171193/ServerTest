@@ -1,49 +1,65 @@
 ﻿using System;
+using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace ServerCore
 {
     class Program
     {
-        // 스레드 지역
-        static ThreadLocal<string> ThreadName = new ThreadLocal<string>(() => { return $"My name is {Thread.CurrentThread.ManagedThreadId}";});
-
-        // 전역
-        static string ThreadName2;
-
-        static void WhoAmI()
-        {
-            /*********** 전역 ************
-             *****************************/
-            //ThreadName2 = $"My name is {Thread.CurrentThread.ManagedThreadId}";
-            //Thread.Sleep(1000);
-            //Console.WriteLine(ThreadName2);
-
-
-            /********* 스레드 지역 *******
-             * 각 스레드가 가지는 TLS 영역
-             *****************************/
-            bool repeat = ThreadName.IsValueCreated;
-            if(repeat)
-                Console.WriteLine($"{ThreadName.Value} is repeat.");
-            else
-                Console.WriteLine(ThreadName.Value);
-        }
-
         static void Main(string[] args)
         {
-            ThreadPool.SetMinThreads(1, 1);
-            ThreadPool.SetMaxThreads(3, 3);
+            // DSN (Domain Name System)
+            // 이름으로 IP 주소를 찾기
+            string host = Dns.GetHostName();
+            IPHostEntry ipHost = Dns.GetHostEntry(host);
+            IPAddress ipAddr = ipHost.AddressList[0];  // 첫번째로 찾은 주소를 할당
+            IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
 
-            // 각 태스크를 부여하여 실행
-            Parallel.Invoke(WhoAmI, WhoAmI, WhoAmI, WhoAmI, WhoAmI, WhoAmI, WhoAmI);
+            // 문지기 생성 => 리슨 소켓 생성 (TCP 통신)
+            Socket listenSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-            ThreadName.Dispose();
+
+            try
+            {
+                // 문지기 교육 : 바인딩
+                listenSocket.Bind(endPoint);
+
+                // 영업 시작
+                // backlog : 최대 대기수
+                listenSocket.Listen(10);
+
+                while (true)
+                {
+                    Console.WriteLine("Listening....");
+
+                    // 손님 입장시키기
+                    Socket clientSocket = listenSocket.Accept();
+
+                    // 받기
+                    byte[] recvBuff = new byte[1024];
+                    int recvBytes = clientSocket.Receive(recvBuff);
+                    // 리시브버퍼, 시작 인덱스, 길이
+                    string recvData = Encoding.UTF8.GetString(recvBuff, 0, recvBytes);
+                    Console.WriteLine($"[From Client] : {recvData}");
+
+                    // 보내기
+                    byte[] sendBuff = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
+                    clientSocket.Send(sendBuff);
+                    // 쫓아내기
+                    clientSocket.Shutdown(SocketShutdown.Both);
+                    clientSocket.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
         }
     }
 }
