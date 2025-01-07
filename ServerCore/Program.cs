@@ -18,19 +18,17 @@ namespace ServerCore
         {
             try
             {
-                // 받기
-                byte[] recvBuff = new byte[1024];
-                int recvBytes = clientSocket.Receive(recvBuff);
-                // 리시브버퍼, 시작 인덱스, 길이
-                string recvData = Encoding.UTF8.GetString(recvBuff, 0, recvBytes);
-                Console.WriteLine($"[From Client] : {recvData}");
+                // 세션 생성
+                Session session = new Session();
+                session.Start(clientSocket);
 
                 // 보내기
                 byte[] sendBuff = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
-                clientSocket.Send(sendBuff);
-                // 쫓아내기
-                clientSocket.Shutdown(SocketShutdown.Both);
-                clientSocket.Close();
+                session.Send(sendBuff);
+
+                Thread.Sleep(1000);
+
+                session.Disconnect();
             }
             catch (Exception ex)
             {
@@ -52,11 +50,11 @@ namespace ServerCore
             _listener.Init(endPoint, OnAcceptHandler);
             Console.WriteLine("Listening....");
 
+            // Danger Zone (공유 자원을 다룰 경우 동기화 문제가 발생할 수 있는 구역)
             while (true)
             {
 
             }
-
         }
     }
 }
