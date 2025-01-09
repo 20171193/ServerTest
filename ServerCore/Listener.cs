@@ -12,12 +12,13 @@ namespace ServerCore
     {
         private Socket _listenSocket;
 
-        private Action<Socket> _onAcceptHandler;
+        // 
+        private Func<Session> _sessionFactory;
 
-        public void Init(IPEndPoint endPoint, Action<Socket> onAcceptHandler)
+        public void Init(IPEndPoint endPoint, Func<Session> sessionFactory)
         {
             _listenSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            _onAcceptHandler = onAcceptHandler; 
+            _sessionFactory = sessionFactory;
             // 문지기 교육 : 바인딩
             _listenSocket.Bind(endPoint);
 
@@ -48,7 +49,10 @@ namespace ServerCore
         {
             if(args.SocketError == SocketError.Success)
             {
-                _onAcceptHandler.Invoke(args.AcceptSocket);
+                // 세션 생성
+                Session session = _sessionFactory.Invoke();
+                session.Start(args.AcceptSocket);
+                session.OnConnected(args.AcceptSocket.RemoteEndPoint);
             }
             else
                 Console.WriteLine(args.SocketError.ToString());

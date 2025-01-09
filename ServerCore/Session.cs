@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
-    public class Session
+    public abstract class Session
     {
         private Socket _socket;
         private int _disconnected = 0;
@@ -22,6 +23,11 @@ namespace ServerCore
         
         // Receive Arguments
         private SocketAsyncEventArgs _recvArgs = new SocketAsyncEventArgs();
+
+        public abstract void OnConnected(EndPoint endPoint);
+        public abstract void OnRecv(ArraySegment<byte> buffer);
+        public abstract void OnSend(int numOfBytes);
+        public abstract void OnDisconnected(EndPoint endPoint);
 
         public void Start(Socket socket)
         {
@@ -60,6 +66,12 @@ namespace ServerCore
              ** 하지만, Send가 완료되지 않았는데 버퍼를 바꾸는 경우가 발생할 수 있음.
              *** 최종적으로 Send 버퍼를 락과 큐를 활용하여 관리
              *****************************************************************************/
+
+            /*********************************** 개선 ************************************
+             * 각각의 Send Buffer를 보내는 것이 아닌, 하나의 큰 Send Buffer를 생성하고,
+             * 해당 Buffer를 쪼개서 보낸다면 더 개선이 될 수 있음.
+             **********************************************************/
+
             lock (_lock)
             {
                 _sendQueue.Enqueue(sendBuff);
@@ -74,6 +86,7 @@ namespace ServerCore
             if (Interlocked.Exchange(ref _disconnected, 1) == 1)
                 return;
 
+            OnDisconnected(_socket.RemoteEndPoint);
             _socket.Shutdown(SocketShutdown.Both);
             _socket.Close();
         }
@@ -112,7 +125,7 @@ namespace ServerCore
                         _sendArgs.BufferList = null;
                         _pendingList.Clear();
 
-                        Console.WriteLine($"Transferred bytes : {_sendArgs.BytesTransferred}");
+                        OnSend(_sendArgs.BytesTransferred);
 
                         if (_sendQueue.Count > 0)
                             // 락을 통한 예약대기 상태의 버퍼 처리
@@ -138,9 +151,10 @@ namespace ServerCore
             {
                 try
                 {
-                    string recvData = Encoding.UTF8.GetString(args.Buffer, args.Offset, args.BytesTransferred);
-                    Console.WriteLine($"[From Client] : {recvData}");
-                    
+                    /****************************** 개선 ********************************
+                    /* Receive 완료를 콜백방식으로 알려야 함.
+                    *********************************************************************/
+                    OnRecv(new ArraySegment<byte>(args.Buffer, args.Offset, args.BytesTransferred));
                     RegisterRecv();
                 }
                 catch (Exception ex)
@@ -151,7 +165,7 @@ namespace ServerCore
             // 해제해야 함.
             else
             {
-
+                Disconnect();
             }
         }
         #endregion
