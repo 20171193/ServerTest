@@ -7,9 +7,42 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using ServerCore;
 
 namespace DummyClient
 {
+    class GameSession : Session
+    {
+        public override void OnConnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnConnected : {endPoint}");
+
+            for (int i = 0; i < 5; i++)
+            {
+                // 보낸다 (서버와는 반대로 보내기부터 실행)
+                byte[] sendBuff = Encoding.UTF8.GetBytes($"Hello World! Count : {i}\n");
+                Send(sendBuff);
+            }
+        }
+
+        public override void OnDisconnected(EndPoint endPoint)
+        {
+            Console.WriteLine($"OnDisconnected : {endPoint}");
+        }
+
+        public override void OnRecv(ArraySegment<byte> buffer)
+        {
+            string recvData = Encoding.UTF8.GetString(buffer.Array, buffer.Offset, buffer.Count);
+            Console.WriteLine($"[From Server] : {recvData}");
+        }
+
+        public override void OnSend(int numOfBytes)
+        {
+            Console.WriteLine($"Transferred bytes : {numOfBytes}");
+        }
+    }
+
+
     internal class Program
     {
         static void Main(string[] args)
@@ -21,6 +54,9 @@ namespace DummyClient
             IPAddress ipAddr = ipHost.AddressList[0];  // 첫번째로 찾은 주소를 할당
             IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
 
+            Connector connector = new Connector();
+            connector.Connect(endPoint, ()=>{ return new GameSession(); });
+
             while (true)
             {
                 // 휴대폰 설정
@@ -28,27 +64,11 @@ namespace DummyClient
 
                 try
                 {
-                    // 문지기와 연락시도 (입장 문의)
+                    /************************** 수정 이전 ***************************
+                    /* 문지기와 연락시도 (입장 문의)
+                    /** 블로킹 방식으로 수정이 필요
                     socket.Connect(endPoint);
-
-                    Console.WriteLine($"Connected To {socket.RemoteEndPoint.ToString()}");
-
-                    for (int i = 0; i < 5; i++)
-                    {
-                        // 보낸다 (서버와는 반대로 보내기부터 실행)
-                        byte[] sendBuff = Encoding.UTF8.GetBytes($"Hello World! Count : {i}");
-                        int sendBytes = socket.Send(sendBuff);
-                    }
-
-                    // 받는다
-                    byte[] recvBuff = new byte[1024];
-                    int recvBytes = socket.Receive(recvBuff);
-                    string recvData = Encoding.UTF8.GetString(recvBuff, 0, recvBytes);
-                    Console.WriteLine($"[From Server] {recvData}");
-
-                    // 나간다 (서버에서 쫓아내더라도 추가)
-                    socket.Shutdown(SocketShutdown.Both);
-                    socket.Close();
+                    *****************************************************************/
                 }
                 catch (Exception ex)
                 {
