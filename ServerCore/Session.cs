@@ -9,6 +9,40 @@ using System.Threading.Tasks;
 
 namespace ServerCore
 {
+    public abstract class PacketSession : Session
+    {
+        public const int HeaderSize = 2;
+
+        // sealed : 추가적인 재정의를 봉인
+        // [size(2)][packetID][ ... ][size(2)][packetID(2)][ ... ]
+        public sealed override int OnRecv(ArraySegment<byte> buffer)
+        {
+            int processLen = 0;
+            while(true)
+            {
+                // 최소한 헤더는 파싱할 수 있는지 확인
+                if(buffer.Count < HeaderSize)
+                    break;
+
+                // 패킷이 완전체로 도착했는지 확인
+                ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+                if (buffer.Count < dataSize)
+                    break;
+
+                // 패킷을 조립
+                OnRecvPacket(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
+                
+                processLen += dataSize;
+                // 버퍼 이동
+                buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
+            }
+
+            return processLen;   
+        }
+
+        public abstract void OnRecvPacket(ArraySegment<byte> buffer);
+    }
+
     public abstract class Session
     {
         private Socket _socket;
