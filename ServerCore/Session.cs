@@ -19,7 +19,7 @@ namespace ServerCore
         private object _lock = new object();
 
         // Send Arguments
-        private Queue<byte[]> _sendQueue = new Queue<byte[]>();
+        private Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
         private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
         private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
         
@@ -47,7 +47,7 @@ namespace ServerCore
             RegisterRecv();
         }
 
-        public void Send(byte[] sendBuff)
+        public void Send(ArraySegment<byte> sendBuff)
         {
             /************************** 수정 이전 *****************************************
              * Send시 마다 계속해서 생산? (재사용이 불가하므로 성능상의 문제가 발생)
@@ -100,11 +100,11 @@ namespace ServerCore
             // _sendArgs.BufferList : 버퍼를 리스트로 만들어 한 번에 전송이 가능함.
             while(_sendQueue.Count > 0)
             {
-                byte[] buff = _sendQueue.Dequeue();
+                ArraySegment<byte> buff = _sendQueue.Dequeue();
                 // ArraySegment : 배열의 일부를 나타내는 ***구조체
                 // _sendArgs.BufferList.Add(new ArraySegment<byte>(buff, 0, buff.Length));
                 // Error : 버퍼리스트를 먼저 만들고 넣어야함.
-                _pendingList.Add(new ArraySegment<byte>(buff, 0, buff.Length));
+                _pendingList.Add(buff);
             }
             _sendArgs.BufferList = _pendingList;
 

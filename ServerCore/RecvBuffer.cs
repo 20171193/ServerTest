@@ -26,12 +26,12 @@ namespace ServerCore
         
         public ArraySegment<byte> ReadSegment // == DataSegmennt
         {
-            get { return new ArraySegment<byte>(_buffer.Array, _buffer.Offset + _readPos, DataSize)}
+            get { return new ArraySegment<byte>(_buffer.Array, _buffer.Offset + _readPos, DataSize); }
         }
 
         public ArraySegment<byte> WriteSegment
         {
-            get { return new ArraySegment<byte>(_buffer.Array, _buffer.Offset + _writePos, FreeSize)}
+            get { return new ArraySegment<byte>(_buffer.Array, _buffer.Offset + _writePos, FreeSize); }
         }
 
         // 빈 공간을 찾기위한 배열 정리

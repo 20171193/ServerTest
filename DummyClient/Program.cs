@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using ServerCore;
+using System.Runtime.InteropServices;
 
 namespace DummyClient
 {
@@ -21,7 +22,7 @@ namespace DummyClient
             {
                 // 보낸다 (서버와는 반대로 보내기부터 실행)
                 byte[] sendBuff = Encoding.UTF8.GetBytes($"Hello World! Count : {i}\n");
-                Send(sendBuff);
+                Send(new ArraySegment<byte>(sendBuff));
             }
         }
 

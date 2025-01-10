@@ -6,17 +6,31 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Server
 {
+    class Test
+    {
+        public int hp = 0;
+        public int atk = 0;
+    }
+
     class GameSession : Session
     {
         public override void OnConnected(EndPoint endPoint)
         {
             Console.WriteLine($"OnConnected : {endPoint}");
 
-            // 보내기
-            byte[] sendBuff = Encoding.UTF8.GetBytes("Welcome to MMORPG Server !");
+            Test test = new Test() { hp = 100, atk = 10 };
+
+            ArraySegment<byte>? openSegment = SendBufferHelper.Open(4096);
+            byte[] buffer = BitConverter.GetBytes(test.hp);
+            byte[] buffer2 = BitConverter.GetBytes(test.atk);
+            Array.Copy(buffer, 0, openSegment.Value.Array, openSegment.Value.Offset, buffer.Length);
+            Array.Copy(buffer2, 0, openSegment.Value.Array, openSegment.Value.Offset + buffer.Length, buffer2.Length);
+            ArraySegment<byte> sendBuff = SendBufferHelper.Close(buffer.Length + buffer2.Length);
+
             Send(sendBuff);
             Thread.Sleep(1000);
             Disconnect();
