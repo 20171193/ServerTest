@@ -39,11 +39,12 @@ namespace DummyClient
 
             //for (int i = 0; i < 5; i++)
             {
-                ArraySegment<byte>? s = SendBufferHelper.Open(4096);
+                ArraySegment<byte> s = SendBufferHelper.Open(4096);
 
                 ushort count = 0;
                 bool success = true;
                 
+                success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset))
 
                 byte[] size = BitConverter.GetBytes(packet.size);
                 byte[] packetId = BitConverter.GetBytes(packet.packetId);
