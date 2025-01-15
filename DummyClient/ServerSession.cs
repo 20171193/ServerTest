@@ -31,6 +31,12 @@ namespace DummyClient
 
     class ServerSession : Session
     {
+        static unsafe void ToBytes(byte[] array, int offset, ulong value)
+        {
+            fixed (byte* ptr = &array[offset])
+                *(ulong*)ptr = value;
+        }
+
         public override void OnConnected(EndPoint endPoint)
         {
             Console.WriteLine($"OnConnected : {endPoint}");
@@ -43,8 +49,13 @@ namespace DummyClient
 
                 ushort count = 0;
                 bool success = true;
-                
-                success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset))
+
+                success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), packet.size);
+                count += 2;
+                success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset+count, s.Count-count), packet.playerId);
+                count += 2;
+                success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset+count, s.Count-count), packet.playerId);
+                count += 8;
 
                 byte[] size = BitConverter.GetBytes(packet.size);
                 byte[] packetId = BitConverter.GetBytes(packet.packetId);
