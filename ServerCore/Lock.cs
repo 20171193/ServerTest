@@ -76,7 +76,7 @@ namespace ServerCore
             while (true)
             {
                 for (int i = 0; i < MAX_SPIN_COUNT; i++)
-                { 
+                {
                     if (Interlocked.CompareExchange(ref _flag, desired, EMPTY_FLAG) == EMPTY_FLAG)
                     {
                         // 소유권 획득 시 Write Count를 1로 수정
@@ -102,7 +102,7 @@ namespace ServerCore
             ******************************************************************/
             // Write Count에 따른 락 해제
             int lockCount = --_writeCount;
-            if(lockCount == 0)
+            if (lockCount == 0)
                 Interlocked.Exchange(ref _flag, EMPTY_FLAG);
         }
 
@@ -148,7 +148,7 @@ namespace ServerCore
             while (true)
             {
                 for (int i = 0; i < MAX_SPIN_COUNT; i++)
-                { 
+                {
                     int expected = (_flag & READ_MASK);
                     if (Interlocked.CompareExchange(ref _flag, expected + 1, expected) == expected)
                         return;
@@ -157,7 +157,7 @@ namespace ServerCore
                 Thread.Yield();
             }
         }
-        
+
         public void ReadUnLock()
         {
             Interlocked.Decrement(ref _flag);

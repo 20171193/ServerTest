@@ -23,7 +23,7 @@ namespace ServerCore
         public int DataSize { get { return _writePos - _readPos; } }
         public int FreeSize { get { return _buffer.Count - _writePos; } }
 
-        
+
         public ArraySegment<byte> ReadSegment // == DataSegmennt
         {
             get { return new ArraySegment<byte>(_buffer.Array, _buffer.Offset + _readPos, DataSize); }
@@ -39,7 +39,7 @@ namespace ServerCore
         {
             int dataSize = DataSize;
             // 모든 데이터를 처리한 상태 (_readPos == _writePos)
-            if(dataSize == 0)
+            if (dataSize == 0)
             {
                 // 복사하지 않고 커서 위치만 리셋
                 _readPos = _writePos = 0;

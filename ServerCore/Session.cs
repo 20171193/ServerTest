@@ -18,10 +18,10 @@ namespace ServerCore
         public sealed override int OnRecv(ArraySegment<byte> buffer)
         {
             int processLen = 0;
-            while(true)
+            while (true)
             {
                 // 최소한 헤더는 파싱할 수 있는지 확인
-                if(buffer.Count < HeaderSize)
+                if (buffer.Count < HeaderSize)
                     break;
 
                 // 패킷이 완전체로 도착했는지 확인
@@ -31,13 +31,13 @@ namespace ServerCore
 
                 // 패킷을 조립
                 OnRecvPacket(new ArraySegment<byte>(buffer.Array, buffer.Offset, dataSize));
-                
+
                 processLen += dataSize;
                 // 버퍼 이동
                 buffer = new ArraySegment<byte>(buffer.Array, buffer.Offset + dataSize, buffer.Count - dataSize);
             }
 
-            return processLen;   
+            return processLen;
         }
 
         public abstract void OnRecvPacket(ArraySegment<byte> buffer);
@@ -56,7 +56,7 @@ namespace ServerCore
         private Queue<ArraySegment<byte>> _sendQueue = new Queue<ArraySegment<byte>>();
         private List<ArraySegment<byte>> _pendingList = new List<ArraySegment<byte>>();
         private SocketAsyncEventArgs _sendArgs = new SocketAsyncEventArgs();
-        
+
         // Receive Arguments
         private SocketAsyncEventArgs _recvArgs = new SocketAsyncEventArgs();
 
@@ -132,7 +132,7 @@ namespace ServerCore
         private void RegisterSend()
         {
             // _sendArgs.BufferList : 버퍼를 리스트로 만들어 한 번에 전송이 가능함.
-            while(_sendQueue.Count > 0)
+            while (_sendQueue.Count > 0)
             {
                 ArraySegment<byte> buff = _sendQueue.Dequeue();
                 // ArraySegment : 배열의 일부를 나타내는 ***구조체
@@ -193,7 +193,7 @@ namespace ServerCore
                 try
                 {
                     // Write 커서 이동
-                    if(_recvBuffer.OnWrite(args.BytesTransferred) == false)
+                    if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
                     {
                         Disconnect();
                         return;
@@ -208,7 +208,7 @@ namespace ServerCore
                     }
 
                     // Read 커서 이동
-                    if(_recvBuffer.OnRead(args.BytesTransferred) == false)
+                    if (_recvBuffer.OnRead(args.BytesTransferred) == false)
                     {
                         Disconnect();
                         return;

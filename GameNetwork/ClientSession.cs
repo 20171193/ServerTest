@@ -6,25 +6,40 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
-namespace Server
+namespace ServerTest
 {
     class Packet
     {
         /**************** 패킷 설계 **********************
          * size를 같이 가지며 크기가 유동적인 패킷에 대비
+         ** 클라이언트와 대칭, 추후 공통 부분의 설계가 필요
          *************************************************/
-       
+
         public ushort size;
         public ushort packetId;
     }
+    class PlayerInfoReq : Packet
+    {
+        public long playerId;
+    }
+    class PlayerInfoOk : Packet
+    {
+        public int hp;
+        public int atk;
+    }
+    public enum PacketID
+    {
+        PlayerInfoReq = 1,
+        PlayerInfoOk = 2,
+    }
+
     class LoginOkPacket : Packet
     {
 
     }
 
-    class GameSession : PacketSession
+    class ClientSession : PacketSession
     {
         public override void OnConnected(EndPoint endPoint)
         {
@@ -46,8 +61,24 @@ namespace Server
         }
         public override void OnRecvPacket(ArraySegment<byte> buffer)
         {
+            ushort count = 0;
+
             ushort size = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
-            ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
+            count += 2;
+            ushort id = BitConverter.ToUInt16(buffer.Array, buffer.Offset + count);
+            count += 2;
+
+            switch ((PacketID)id)
+            {
+                case PacketID.PlayerInfoReq:
+                    {
+                        long playerId = BitConverter.ToInt64(buffer.Array, buffer.Offset + count);
+                        count += 8;
+                        Console.WriteLine($"PlayerInfoReq : {playerId}");
+                    }
+                    break;
+
+            }
 
             Console.WriteLine($"RecPack ID : {id}, Size : {size}");
         }
@@ -63,29 +94,4 @@ namespace Server
         }
     }
 
-    class Program
-    {
-        static Listener _listener = new Listener();
-
-        static void Main(string[] args)
-        {
-            // DSN (Domain Name System)
-            // 이름으로 IP 주소를 찾기
-            string host = Dns.GetHostName();
-            IPHostEntry ipHost = Dns.GetHostEntry(host);
-            IPAddress ipAddr = ipHost.AddressList[0];  // 첫번째로 찾은 주소를 할당
-            IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
-
-
-            // 콜백 방식 사용
-            _listener.Init(endPoint, () => { return new GameSession(); });
-            Console.WriteLine("Listening....");
-
-            // Danger Zone (공유 자원을 다룰 경우 동기화 문제가 발생할 수 있는 구역)
-            while (true)
-            {
-
-            }
-        }
-    }
 }

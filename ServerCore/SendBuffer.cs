@@ -16,7 +16,7 @@ namespace ServerCore
      ** 내부적으로 관리한다면 복사가 매우 많이 일어남.
      ** 외부에서 만들어 바로 보내는 방식으로 구성하는 것이 효율적임.
      *** 그렇다면 각기 다른 패킷에 대한 Send Buffer의 크기는? 
-     *****************************************************************************/ 
+     *****************************************************************************/
 
     public class SendBufferHelper
     {
@@ -24,7 +24,7 @@ namespace ServerCore
         public static ThreadLocal<SendBuffer> CurrentBuffer = new ThreadLocal<SendBuffer>(() => { return null; });
 
         public static int ChunkSize { get; set; } = 4096 * 100;
-        
+
         public static ArraySegment<byte>? Open(int reserveSize)
         {
             if (CurrentBuffer.Value == null || CurrentBuffer.Value.FreeSize < reserveSize)
@@ -49,11 +49,11 @@ namespace ServerCore
 
         public SendBuffer(int chunkSize)
         {
-            _buffer = new byte[chunkSize];  
+            _buffer = new byte[chunkSize];
         }
 
-        public int FreeSize {get { return _buffer.Length - _usedSize; } }
-        
+        public int FreeSize { get { return _buffer.Length - _usedSize; } }
+
         public ArraySegment<byte>? Open(int reserveSize)
         {
             if (reserveSize > FreeSize)

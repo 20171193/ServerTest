@@ -47,7 +47,7 @@ namespace ServerCore
         }
         private void OnAcceptCompleted(object sender, SocketAsyncEventArgs args)
         {
-            if(args.SocketError == SocketError.Success)
+            if (args.SocketError == SocketError.Success)
             {
                 // 세션 생성
                 Session session = _sessionFactory.Invoke();
