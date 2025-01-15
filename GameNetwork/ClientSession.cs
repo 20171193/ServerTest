@@ -9,34 +9,60 @@ using System.Threading.Tasks;
 
 namespace ServerTest
 {
-    class Packet
+    public abstract class Packet
     {
-        /**************** 패킷 설계 **********************
-         * size를 같이 가지며 크기가 유동적인 패킷에 대비
-         ** 클라이언트와 대칭, 추후 공통 부분의 설계가 필요
-         *************************************************/
-
+        // 패킷 자체에서 멤버로 들고있을 필요는 없음.
         public ushort size;
         public ushort packetId;
+
+        public abstract ArraySegment<byte> Write();
+        public abstract void Read(ArraySegment<byte> s);
     }
     class PlayerInfoReq : Packet
     {
         public long playerId;
+
+        public PlayerInfoReq()
+        {
+            this.packetId = (ushort)PacketID.PlayerInfoReq;
+        }
+
+        public override ArraySegment<byte> Write()
+        {
+            ArraySegment<byte> s = SendBufferHelper.Open(4096);
+
+            ushort count = 0;
+            bool success = true;
+
+            count += 2;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), (ushort)PacketID.PlayerInfoReq);
+            count += 2;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset + count, s.Count - count), this.playerId);
+            count += 8;
+            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), count);
+            if (success == false)
+                return null;
+
+            return SendBufferHelper.Close(count);
+        }
+
+        public override void Read(ArraySegment<byte> s)
+        {
+            ushort count = 0;
+
+            count += 2;
+            count += 2;
+            this.playerId = BitConverter.ToInt64(new ReadOnlySpan<byte>(s.Array, s.Offset + count, s.Count - count));
+            count += 8;
+
+            Console.WriteLine($"PlayerInfoReq : {playerId}");
+        }
     }
-    class PlayerInfoOk : Packet
-    {
-        public int hp;
-        public int atk;
-    }
+
     public enum PacketID
     {
         PlayerInfoReq = 1,
         PlayerInfoOk = 2,
-    }
-
-    class LoginOkPacket : Packet
-    {
-
     }
 
     class ClientSession : PacketSession
@@ -72,15 +98,16 @@ namespace ServerTest
             {
                 case PacketID.PlayerInfoReq:
                     {
-                        long playerId = BitConverter.ToInt64(buffer.Array, buffer.Offset + count);
-                        count += 8;
-                        Console.WriteLine($"PlayerInfoReq : {playerId}");
+                        PlayerInfoReq p = new PlayerInfoReq();
+                        p.Read(buffer);
+
+                        Console.WriteLine($"PlayerInfoReq : {p.playerId}");
                     }
                     break;
 
             }
 
-            Console.WriteLine($"RecPack ID : {id}, Size : {size}");
+            Console.WriteLine($"RecvPacket ID : {id}, Size : {size}");
         }
 
         public override void OnDisconnected(EndPoint endPoint)
