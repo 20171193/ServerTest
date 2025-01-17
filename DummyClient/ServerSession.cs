@@ -20,6 +20,7 @@ namespace DummyClient
     class PlayerInfoReq : Packet
     {
         public long playerId;
+        public string name;
 
         public PlayerInfoReq()
         {
@@ -28,17 +29,26 @@ namespace DummyClient
 
         public override ArraySegment<byte> Write()
         {
-            ArraySegment<byte> s = SendBufferHelper.Open(4096);
+            ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
             ushort count = 0;
             bool success = true;
+            Span<byte> s = new Span<byte>(segment.Array, segment.Offset, segment.Count);
+            
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
+            count += sizeof(long);
+            success &= BitConverter.TryWriteBytes(s, count);
 
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), (ushort)PacketID.PlayerInfoReq);
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset + count, s.Count - count), this.playerId);
-            count += 8;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), count);
+            // C#의 string은 기본적으로 UTF-16을 사용
+            ushort nameLen = (ushort)Encoding.Unicode.GetByteCount(this.name);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), nameLen);
+            count += sizeof(ushort);
+            Array.Copy(Encoding.Unicode.GetBytes(this.name), 0, segment.Array, count, nameLen);
+            count += nameLen;
+
 
             if (success == false)
                 return null;
@@ -46,13 +56,14 @@ namespace DummyClient
             return SendBufferHelper.Close(count);
         }
 
-        public override void Read(ArraySegment<byte> s)
+        public override void Read(ArraySegment<byte> segment)
         {
             ushort count = 0;
 
-            count += 2;
-            count += 2;
+            ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
 
+            count += 2;
+            count += 2;
             // 만일 실제 사이즈가 아닌 이상한 정보를 보낸다면?
             //  - 12바이트가 아닌 4바이트를 보냈다고 가정해보자
             //  - 현재의 코드에서는 사이즈가 다르더라도 그대로 읽어옴.
@@ -62,7 +73,7 @@ namespace DummyClient
 
             //  범위를 넘어서 확인하려하면 예외를 발생시키자.
             // *수정된 코드
-            this.playerId = BitConverter.ToInt64(new ReadOnlySpan<byte>(s.Array, s.Offset + count, s.Count - count));
+            this.playerId = BitConverter.ToInt64(s.Slice(count, s.Length-count));
             count += 8;
 
             Console.WriteLine($"PlayerInfoReq : {playerId}");
@@ -92,7 +103,7 @@ namespace DummyClient
         {
             Console.WriteLine($"OnConnected : {endPoint}");
 
-            PlayerInfoReq packet = new PlayerInfoReq() { packetId = 1001 };
+            PlayerInfoReq packet = new PlayerInfoReq() { packetId = 1001, name = "ABCD"};
 
             //for (int i = 0; i < 5; i++)
             {

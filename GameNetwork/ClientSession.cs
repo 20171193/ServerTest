@@ -11,7 +11,6 @@ namespace ServerTest
 {
     public abstract class Packet
     {
-        // 패킷 자체에서 멤버로 들고있을 필요는 없음.
         public ushort size;
         public ushort packetId;
 
@@ -29,36 +28,49 @@ namespace ServerTest
 
         public override ArraySegment<byte> Write()
         {
-            ArraySegment<byte> s = SendBufferHelper.Open(4096);
+            ArraySegment<byte> segment = SendBufferHelper.Open(4096);
 
             ushort count = 0;
             bool success = true;
 
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), (ushort)PacketID.PlayerInfoReq);
-            count += 2;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset + count, s.Count - count), this.playerId);
-            count += 8;
-            success &= BitConverter.TryWriteBytes(new Span<byte>(s.Array, s.Offset, s.Count), count);
+            Span<byte> s = new Span<byte>(segment.Array, segment.Offset, segment.Count);
+
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
+            count += sizeof(long);
+            success &= BitConverter.TryWriteBytes(s, count);
+
             if (success == false)
                 return null;
 
             return SendBufferHelper.Close(count);
         }
 
-        public override void Read(ArraySegment<byte> s)
+        public override void Read(ArraySegment<byte> segment)
         {
             ushort count = 0;
 
+            ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
+
             count += 2;
             count += 2;
-            this.playerId = BitConverter.ToInt64(new ReadOnlySpan<byte>(s.Array, s.Offset + count, s.Count - count));
+            // 만일 실제 사이즈가 아닌 이상한 정보를 보낸다면?
+            //  - 12바이트가 아닌 4바이트를 보냈다고 가정해보자
+            //  - 현재의 코드에서는 사이즈가 다르더라도 그대로 읽어옴.
+            //  - 이 부분에 대한 처리가 필요.
+            // *기존 코드
+            //this.playerId = BitConverter.ToInt64(s.Array, s.Offset + count);
+
+            //  범위를 넘어서 확인하려하면 예외를 발생시키자.
+            // *수정된 코드
+            this.playerId = BitConverter.ToInt64(s.Slice(count, s.Length - count));
             count += 8;
 
             Console.WriteLine($"PlayerInfoReq : {playerId}");
         }
     }
-
     public enum PacketID
     {
         PlayerInfoReq = 1,
