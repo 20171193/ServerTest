@@ -35,12 +35,13 @@ namespace DummyClient
             bool success = true;
             Span<byte> s = new Span<byte>(segment.Array, segment.Offset, segment.Count);
             
+            // 최종적으로 패킷의 크기를 할당하기 위한 공간 확보
             count += sizeof(ushort);
+
             success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
             count += sizeof(ushort);
             success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
             count += sizeof(long);
-            success &= BitConverter.TryWriteBytes(s, count);
 
             // C#의 string은 기본적으로 UTF-16을 사용
             ushort nameLen = (ushort)Encoding.Unicode.GetByteCount(this.name);
@@ -49,6 +50,7 @@ namespace DummyClient
             Array.Copy(Encoding.Unicode.GetBytes(this.name), 0, segment.Array, count, nameLen);
             count += nameLen;
 
+            success &= BitConverter.TryWriteBytes(s, count);
 
             if (success == false)
                 return null;
@@ -62,8 +64,8 @@ namespace DummyClient
 
             ReadOnlySpan<byte> s = new ReadOnlySpan<byte>(segment.Array, segment.Offset, segment.Count);
 
-            count += 2;
-            count += 2;
+            count += sizeof(ushort);
+            count += sizeof(ushort);
             // 만일 실제 사이즈가 아닌 이상한 정보를 보낸다면?
             //  - 12바이트가 아닌 4바이트를 보냈다고 가정해보자
             //  - 현재의 코드에서는 사이즈가 다르더라도 그대로 읽어옴.
@@ -74,9 +76,12 @@ namespace DummyClient
             //  범위를 넘어서 확인하려하면 예외를 발생시키자.
             // *수정된 코드
             this.playerId = BitConverter.ToInt64(s.Slice(count, s.Length-count));
-            count += 8;
+            count += sizeof(long);
 
-            Console.WriteLine($"PlayerInfoReq : {playerId}");
+            // string
+            ushort nameLen = BitConverter.ToUInt16(s.Slice(count, s.Length - count));
+            count += sizeof(ushort);
+            this.name = Encoding.Unicode.GetString(s.Slice(count, nameLen));
         }
     }
 
@@ -103,7 +108,7 @@ namespace DummyClient
         {
             Console.WriteLine($"OnConnected : {endPoint}");
 
-            PlayerInfoReq packet = new PlayerInfoReq() { packetId = 1001, name = "ABCD"};
+            PlayerInfoReq packet = new PlayerInfoReq() { playerId = 1001, name = "ABCD"};
 
             //for (int i = 0; i < 5; i++)
             {
