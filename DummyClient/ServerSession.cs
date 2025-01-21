@@ -6,18 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using static DummyClient.PlayerInfoReq;
 
 namespace DummyClient
 {
-    public abstract class Packet
-    {
-        public ushort size;
-        public ushort packetId;
-
-        public abstract ArraySegment<byte>Write();
-        public abstract void Read(ArraySegment<byte> s);
-    }
-    class PlayerInfoReq : Packet
+    class PlayerInfoReq
     {
         public long playerId;
         public string name;
@@ -52,50 +45,7 @@ namespace DummyClient
 
         public List<SkillInfo> skillInfos = new List<SkillInfo>();
 
-        public PlayerInfoReq()
-        {
-            this.packetId = (ushort)PacketID.PlayerInfoReq;
-        }
-
-        public override ArraySegment<byte> Write()
-        {
-            ArraySegment<byte> segment = SendBufferHelper.Open(4096);
-
-            ushort count = 0;
-            bool success = true;
-            Span<byte> s = new Span<byte>(segment.Array, segment.Offset, segment.Count);
-            
-            // 최종적으로 패킷의 크기를 할당하기 위한 공간 확보
-            count += sizeof(ushort);
-
-            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
-            count += sizeof(ushort);
-            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
-            count += sizeof(long);
-
-            // C#의 string은 기본적으로 UTF-16을 사용
-            ushort nameLen = (ushort)Encoding.Unicode.GetByteCount(this.name);
-            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), nameLen);
-            count += sizeof(ushort);
-            Array.Copy(Encoding.Unicode.GetBytes(this.name), 0, segment.Array, count, nameLen);
-            count += nameLen;
-
-            // skill lisit
-            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)skillInfos.Count);
-            count += sizeof(ushort);
-            foreach (SkillInfo skill in skillInfos)
-                success &= skill.Write(s, ref count);
-
-
-            success &= BitConverter.TryWriteBytes(s, count);
-
-            if (success == false)
-                return null;
-
-            return SendBufferHelper.Close(count);
-        }
-
-        public override void Read(ArraySegment<byte> segment)
+        public void Read(ArraySegment<byte> segment)
         {
             ushort count = 0;
 
@@ -133,6 +83,44 @@ namespace DummyClient
                 skillInfos.Add(skill);
             }
         }
+        public ArraySegment<byte> Write()
+        {
+            ArraySegment<byte> segment = SendBufferHelper.Open(4096);
+
+            ushort count = 0;
+            bool success = true;
+            Span<byte> s = new Span<byte>(segment.Array, segment.Offset, segment.Count);
+
+            // 최종적으로 패킷의 크기를 할당하기 위한 공간 확보
+            count += sizeof(ushort);
+
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.packetId);
+            count += sizeof(ushort);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), this.playerId);
+            count += sizeof(long);
+
+            // C#의 string은 기본적으로 UTF-16을 사용
+            ushort nameLen = (ushort)Encoding.Unicode.GetByteCount(this.name);
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), nameLen);
+            count += sizeof(ushort);
+            Array.Copy(Encoding.Unicode.GetBytes(this.name), 0, segment.Array, count, nameLen);
+            count += nameLen;
+
+            // skill lisit
+            success &= BitConverter.TryWriteBytes(s.Slice(count, s.Length - count), (ushort)skillInfos.Count);
+            count += sizeof(ushort);
+            foreach (SkillInfo skill in skillInfos)
+                success &= skill.Write(s, ref count);
+
+
+            success &= BitConverter.TryWriteBytes(s, count);
+
+            if (success == false)
+                return null;
+
+            return SendBufferHelper.Close(count);
+        }
+
     }
 
     public enum PacketID
@@ -158,6 +146,8 @@ namespace DummyClient
         {
             Console.WriteLine($"OnConnected : {endPoint}");
 
+            // 중간에 패킷을 만들어 작업하는 것이 성능 상에서 손해를 볼 수 있지만,
+            // 더욱 직관적이고 편리하다.
             PlayerInfoReq packet = new PlayerInfoReq() { playerId = 1001, name = "ABCD"};
             packet.skillInfos.Add(new PlayerInfoReq.SkillInfo() { id = 101, level = 1, duration = 3.0f });
             packet.skillInfos.Add(new PlayerInfoReq.SkillInfo() { id = 102, level = 2, duration = 4.0f });
