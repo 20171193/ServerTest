@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PDL>
-	<pakcet name="PlayerInfoReq">
+	<packet name="PlayerInfoReq">
+		<byte name="testByte"/>
 		<long name="playerId"/>
 		<string name="name"/>
 		<list name="skill">
@@ -8,5 +9,8 @@
 			<short name="level"/>
 			<float name="duration"/>
 		</list>
-	</pakcet>
+	</packet>
+	<packet name="Test">
+		<int name="testint"/>
+	</packet>
 </PDL>
