@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace PacketGenerator
+namespace Server
 {
     class PacketFormat
     {
@@ -22,12 +20,6 @@ public enum PacketID
 {{
     {0}
 }}
-interface IPacket
-{{
-    ushort Protocol {{ get; }}
-    void Read(ArraySegment<byte> setgment);
-    ArraySegment<byte> Write();
-}}
 
 {1}
 ";
@@ -44,12 +36,9 @@ interface IPacket
         // {3} 멤버 변수 Write
         public static string packetFormat =
 @"
-class {0} : IPacket
+class {0}
 {{
     {1}
-
-    public ushort Protocol {{ get {{ return (ushort)PacketID.{0}; }} }}
-
     public void Read(ArraySegment<byte> segment)
     {{
         ushort count = 0;
@@ -86,7 +75,7 @@ class {0} : IPacket
 }}
 ";
         #endregion
-        
+
         #region Member Format
         // {0} 변수 형식
         // {1} 변수 이름
