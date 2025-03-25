@@ -17,6 +17,8 @@ namespace Server
 
         static void Main(string[] args)
         {
+            PacketManager.Instance.Register();
+
             // DSN (Domain Name System)
             // 이름으로 IP 주소를 찾기
             string host = Dns.GetHostName();

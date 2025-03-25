@@ -8,10 +8,13 @@ namespace Server
 {
     class PacketHandler
     {
-        public static void PlayerInfoReqHandler(PacketSession session, IPPacketInformation packet)
+        public static void PlayerInfoReqHandler(PacketSession session, IPacket packet)
         {
-            PlayerInfoReq p = packet a
+            PlayerInfoReq p = packet as PlayerInfoReq;
+            
+            //foreach(PlayerInfoReq.S)
         }
+
 
 
     }
