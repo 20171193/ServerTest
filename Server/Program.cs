@@ -34,7 +34,7 @@ namespace Server
             // Danger Zone (공유 자원을 다룰 경우 동기화 문제가 발생할 수 있는 구역)
             while (true)
             {
-
+                ;
             }
         }
     }

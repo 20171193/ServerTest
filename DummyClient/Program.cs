@@ -24,13 +24,11 @@ namespace DummyClient
             IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
 
             Connector connector = new Connector();
+
             connector.Connect(endPoint, () => { return new ServerSession(); });
 
             while (true)
             {
-                // 휴대폰 설정
-                Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
                 try
                 {
                     /************************** 수정 이전 ***************************
@@ -44,7 +42,7 @@ namespace DummyClient
                     Console.WriteLine(ex.ToString());
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
             }
         }
     }

@@ -1,5 +1,21 @@
-START /WAIT ../../PacketGenerator/bin/PacketGenerator.exe ../../PacketGenerator/PDL.xml
+@echo off
+ECHO 현재 경로: %CD%
+
+START ../../PacketGenerator/bin/PacketGenerator.exe ../../PacketGenerator/PDL.xml
+
+DIR /B GenPacket.cs
+DIR /B PacketManager.cs
+
 XCOPY /Y /I GenPacket.cs "../../DummyClient/Packet"
+IF %ERRORLEVEL% NEQ 0 ECHO XCOPY GenPacket.cs 실패!
+
 XCOPY /Y /I GenPacket.cs "../../Server/Packet"
-XCOPY /Y /I PacketManager.cs "../../DummyClient/Packet"
-XCOPY /Y /I PacketManager.cs "../../Server/Packet"
+IF %ERRORLEVEL% NEQ 0 ECHO XCOPY GenPacket.cs 실패!
+
+XCOPY /Y /I ClientPacketManager.cs "../../DummyClient/Packet"
+IF %ERRORLEVEL% NEQ 0 ECHO XCOPY PacketManager.cs 실패!
+
+XCOPY /Y /I ServerPacketManager.cs "../../Server/Packet"
+IF %ERRORLEVEL% NEQ 0 ECHO XCOPY PacketManager.cs 실패!
+
+PAUSE
