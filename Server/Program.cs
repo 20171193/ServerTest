@@ -14,6 +14,7 @@ namespace Server
     class Program
     {
         static Listener _listener = new Listener();
+        public static GameRoom Room = new GameRoom();
 
         static void Main(string[] args)
         {
@@ -28,7 +29,7 @@ namespace Server
 
 
             // 콜백 방식 사용
-            _listener.Init(endPoint, () => { return new ClientSession(); });
+            _listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });
             Console.WriteLine("Listening....");
 
             // Danger Zone (공유 자원을 다룰 경우 동기화 문제가 발생할 수 있는 구역)
