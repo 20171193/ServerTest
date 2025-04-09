@@ -25,7 +25,8 @@ namespace DummyClient
 
             Connector connector = new Connector();
 
-            connector.Connect(endPoint, () => { return new ServerSession(); });
+            connector.Connect(endPoint, () => { return SessionManager.Instance.Generate(); }
+            , 10);
 
             while (true)
             {
@@ -36,13 +37,17 @@ namespace DummyClient
                     /** 블로킹 방식으로 수정이 필요
                     socket.Connect(endPoint);
                     *****************************************************************/
+
+                    SessionManager.Instance.SendForEach();
+                
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
                 }
 
-                Thread.Sleep(100);
+                // 보통 1초에 4번정도 패킷을 보냄
+                Thread.Sleep(250);
             }
         }
     }
