@@ -3,9 +3,6 @@ ECHO 현재 경로: %CD%
 
 START ../../PacketGenerator/bin/PacketGenerator.exe ../../PacketGenerator/PDL.xml
 
-DIR /B GenPacket.cs
-DIR /B PacketManager.cs
-
 XCOPY /Y /I GenPacket.cs "../../DummyClient/Packet"
 IF %ERRORLEVEL% NEQ 0 ECHO XCOPY GenPacket.cs 실패!
 
