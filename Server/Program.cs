@@ -1,5 +1,4 @@
 ﻿using ServerCore;
-using ServerTest;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,6 @@ namespace Server
             IPHostEntry ipHost = Dns.GetHostEntry(host);
             IPAddress ipAddr = ipHost.AddressList[0];  // 첫번째로 찾은 주소를 할당
             IPEndPoint endPoint = new IPEndPoint(ipAddr, 7777);
-
 
             // 콜백 방식 사용
             _listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });

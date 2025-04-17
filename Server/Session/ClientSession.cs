@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerTest
+namespace Server
 {
     class ClientSession : PacketSession
     {
@@ -19,7 +19,7 @@ namespace ServerTest
         {
             Console.WriteLine($"Client OnConnected : {endPoint}");
 
-            Program.Room.Enter(this);
+            Program.Room.Push(() => Program.Room.Enter(this));
         }
         public override void OnRecvPacket(ArraySegment<byte> buffer)
         {
@@ -32,7 +32,9 @@ namespace ServerTest
 
             if(Room != null)
             {
-                Room.Leave(this);
+                GameRoom room = Room;
+                room.Push(() => room.Leave(this));
+                // Action 참조이므로 단순 null 처리를 하면 안됨.
                 Room = null;
             }
 
