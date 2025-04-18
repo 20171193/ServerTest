@@ -45,7 +45,7 @@ namespace Server
         {
 
 
-            Console.WriteLine($"Transferred bytes : {numOfBytes}");
+            //Console.WriteLine($"Transferred bytes : {numOfBytes}");
         }
     }
 
