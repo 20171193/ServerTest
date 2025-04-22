@@ -35,7 +35,6 @@ namespace ServerCore
                 now = next;
             }
         }
-
         // O(logN)
         public T Pop()
         {

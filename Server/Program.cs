@@ -15,6 +15,12 @@ namespace Server
         static Listener _listener = new Listener();
         public static GameRoom Room = new GameRoom();
 
+        static void FlushRoom()
+        {
+            Room.Push(() => Room.Flush());
+            JobTimer.Instance.Push(FlushRoom, 250);
+        }
+
         static void Main(string[] args)
         {
             // DSN (Domain Name System)
@@ -28,7 +34,9 @@ namespace Server
             _listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });
             Console.WriteLine("Listening....");
 
-            int roomTick = 0;
+            //FlushRoom();
+            JobTimer.Instance.Push(FlushRoom);
+
             while (true)
             {
                 // 기존방식 
@@ -45,9 +53,10 @@ namespace Server
                 // * 모든 이벤트를 tick으로 관리할 경우
                 //   매 프레임마다 불필요한 연산이 생김.
 
-                // 개선방식
-                // Priority Queue
-
+                // 개선방식 (JobTimer)
+                // Priority Queue, 중앙 관리자 방식
+                //  * 각 이벤트에 필요한 틱 만큼만 실행
+                JobTimer.Instance.Flush();                
             }
         }
     }
