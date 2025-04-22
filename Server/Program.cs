@@ -28,11 +28,26 @@ namespace Server
             _listener.Init(endPoint, () => { return SessionManager.Instance.Generate(); });
             Console.WriteLine("Listening....");
 
-            // Danger Zone (공유 자원을 다룰 경우 동기화 문제가 발생할 수 있는 구역)
+            int roomTick = 0;
             while (true)
             {
-                Room.Push(() => Room.Flush());
-                Thread.Sleep(250);
+                // 기존방식 
+                // 1. Thread.Sleep(250);
+                // * 각 상황마다 시간은 다를 수 있음
+
+                // 2. tick을 사용해서 관리
+                // int now = System.Environment.TickCount;
+                // if(roomTick < now)
+                // {
+                //     Room.Push(() => Room.Flush());
+                //     roomTick = now + 250;
+                // }
+                // * 모든 이벤트를 tick으로 관리할 경우
+                //   매 프레임마다 불필요한 연산이 생김.
+
+                // 개선방식
+                // Priority Queue
+
             }
         }
     }
