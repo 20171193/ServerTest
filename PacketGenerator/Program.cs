@@ -193,7 +193,7 @@ namespace PacketGenerator
                 case "short":
                     return "ToInt16";
                 case "ushort":
-                    return "ToUint16";
+                    return "ToUInt16";
                 case "int":
                     return "ToInt32";
                 case "long":

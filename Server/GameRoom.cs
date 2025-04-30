@@ -24,39 +24,53 @@ namespace Server
             foreach (ClientSession s in _session)
                 s.Send(_pendingList);
 
-            Console.WriteLine($"Flushed {_pendingList.Count} items");
+            //Console.WriteLine($"Flushed {_pendingList.Count} items");
             _pendingList.Clear();
         }
 
-        // 실제 게임에서 브로드캐스팅 공간을 어떻게 설정할지?
-        // 과부하를 방지하는 선에서 정하는 것이 매우 어려움.
-        public void Broadcast(ClientSession session, string chat)
+        public void Broadcast(ArraySegment<byte> segment)
         {
-            S_Chat packet = new S_Chat();
-            packet.playerId = session.SessionId;
-            packet.chat = $"{chat} I am {packet.playerId}";
-
-            ArraySegment<byte> segment = packet.Write();
-
             _pendingList.Add(segment);
-
-            // 병목현상이 발생할 여지가 있음.
-            // 스레드가 맹목적으로 대기하는 것이 아닌 *큐*를 사용하여 일감을 관리
-
-            // N^2 -> N
-            // - 각 Send도 락을 걸고 SendQueue에 할당
-            // - 요청마다 패킷을 보내기보다 뭉쳐서 한번에 보내는 것이 효율적
-            //foreach (ClientSession s in _session)
-            //    s.Send(segment);
         }
+
         public void Enter(ClientSession session)
         {
+            // 플레이어 추가
             _session.Add(session);
             session.Room = this;
+
+            // 신규 플레이어에게 모든 플레이어 목록 전송
+            S_PlayerList players = new S_PlayerList();
+            foreach(ClientSession s in _session)
+            {
+                players.players.Add(new S_PlayerList.Player()
+                {
+                    isSelf = (s == session),
+                    playerId = s.SessionId,
+                    posX = s.PosX,
+                    posY = s.PosY,
+                    posZ = s.PosZ,
+                });
+            }
+            session.Send(players.Write());
+
+            // 신규 플레이어 입장을 브로드캐스팅
+            S_BroadcastEnterGame enter = new S_BroadcastEnterGame();
+            enter.playerId = session.SessionId;
+            enter.posX = 0;
+            enter.posY = 0;
+            enter.posZ = 0;
+            Broadcast(enter.Write());
         }
         public void Leave(ClientSession session)
         {
+            // 플레이어 제거
             _session.Remove(session);
+
+            // 브로드캐스팅
+            S_BroadcastLeaveGame leave = new S_BroadcastLeaveGame();
+            leave.playerId = session.SessionId;
+            Broadcast(leave.Write());
         }
     }
 }
